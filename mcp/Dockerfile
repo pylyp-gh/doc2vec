@@ -1,5 +1,5 @@
 # Build stage
-FROM --platform=$TARGETPLATFORM cgr.dev/chainguard/wolfi-base:latest AS builder
+FROM --platform=$TARGETPLATFORM node:22-alpine AS builder
 
 # Import build arguments for cross-compilation
 ARG BUILDPLATFORM
@@ -12,9 +12,8 @@ ENV LC_ALL=C.UTF-8
 ENV NODE_ENV=production
 ENV NODE_PATH=/app/node_modules
 
-# Install only runtime dependencies
+# node:22-alpine already ships node + npm; just add CA bundle for HTTPS
 RUN apk update && apk add --no-cache \
-    nodejs \
     ca-certificates \
     && update-ca-certificates
 
@@ -32,9 +31,6 @@ RUN echo "Building for platform: $TARGETPLATFORM" && \
         ca-certificates               \
         curl                          \
         make                          \
-        node-gyp                      \
-        nodejs                        \
-        npm                           \
         openssl                       \
         python3                       \
         sqlite-dev                    \
@@ -50,7 +46,6 @@ RUN echo "Building for platform: $TARGETPLATFORM" && \
         build-base                    \
         curl                          \
         make                          \
-        node-gyp                      \
         openssl                       \
         python3                       \
         sqlite-dev                    \
@@ -61,7 +56,7 @@ RUN echo "Building for platform: $TARGETPLATFORM" && \
     echo "🤖 Build completed !!!"
 
 # Final stage - use target platform
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM node:22-alpine
 
 # Import build arguments for cross-compilation
 ARG BUILDPLATFORM
@@ -74,9 +69,8 @@ ENV LC_ALL=C.UTF-8
 ENV NODE_ENV=production
 ENV NODE_PATH=/app/node_modules
 
-# Install only runtime dependencies for target platform
+# node:22-alpine already ships node + npm; just add CA bundle for HTTPS
 RUN apk update && apk add --no-cache \
-    nodejs \
     ca-certificates
 
 WORKDIR /app
